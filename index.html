@@ -3,396 +3,231 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Polished Snake — Eat & Upgrade</title>
+<title>Polished Snake — Fullscreen, 5 Apples</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0f1720; --panel:#0b1220; --accent:#56d364; --muted:#9aa4b2; --glass: rgba(255,255,255,0.04);
-  }
+  :root{--bg:#0f1720;--panel:#0b1220;--accent:#56d364;--muted:#9aa4b2;--glass:rgba(255,255,255,0.04)}
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#071021 0%, #0b1724 100%);color:#e6eef6}
-  .app{width:960px;max-width:96vw;display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
-  .stage{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 6px 30px rgba(2,6,23,0.6);display:flex;flex-direction:column;align-items:center}
-  canvas{background:linear-gradient(180deg,#031018 0%, #061426 100%);border-radius:8px;border:2px solid rgba(255,255,255,0.03);box-shadow:inset 0 2px 10px rgba(0,0,0,0.6);}
-  .hud{width:100%;display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
-  .stats{display:flex;gap:12px;align-items:center}
-  .stat{background:var(--glass);padding:8px 12px;border-radius:10px;font-weight:600;color:var(--muted);display:inline-flex;flex-direction:column;min-width:90px}
+  html,body{height:100%;}
+  body{margin:0;display:flex;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#071021 0%, #0b1724 100%);color:#e6eef6}
+  .app{display:flex;flex:1;height:100vh;}
+  .stage{flex:1;display:flex;flex-direction:column;padding:20px;gap:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));border-right:1px solid rgba(255,255,255,0.03)}
+  .sidebar{width:340px;min-width:260px;padding:20px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));}
+  canvas{display:block;border-radius:8px;background:linear-gradient(180deg,#031018 0%, #061426 100%);box-shadow:inset 0 2px 10px rgba(0,0,0,0.6);margin:auto}
+  .hud{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .stats{display:flex;gap:10px;align-items:center}
+  .stat{background:var(--glass);padding:8px 12px;border-radius:10px;font-weight:600;color:var(--muted);min-width:90px}
   .stat .val{color:var(--accent);font-size:18px}
   .controls{display:flex;gap:8px}
   .btn{background:#071727;border:1px solid rgba(255,255,255,0.03);color:#dff7e3;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
   .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:600}
 
-  /* shop panel */
-  .shop{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.5)}
   .shop h3{margin:0 0 8px 0;font-size:16px;color:#cfead4}
   .shop .desc{font-size:13px;color:var(--muted);margin-bottom:12px}
   .item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.01), transparent);margin-bottom:10px}
-  .item .icon{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:18px}
-  .item .info{flex:1}
-  .item .title{font-weight:700;color:#dff7e3}
-  .item .meta{font-size:13px;color:var(--muted)}
-  .item button{min-width:110px}
+  .icon{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:18px}
+  .info{flex:1}
+  .meta{font-size:13px;color:var(--muted)}
   .footer{margin-top:12px;font-size:13px;color:var(--muted)}
-
   .owned-list{font-size:13px;color:#c2f2cf;margin-top:8px}
-  @media(max-width:880px){.app{grid-template-columns:1fr;padding:16px} .shop{order:2}}
+  @media(max-width:880px){.sidebar{display:none}}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="stage">
+  <main class="stage">
     <div class="hud">
       <div class="stats">
-        <div class="stat">Score <span id="score" class="val">0</span></div>
-        <div class="stat">Apples <span id="apples" class="val">0</span></div>
-        <div class="stat">Level <span id="level" class="val">1</span></div>
-        <div class="stat">Rank <span id="rank" class="val">diddler</span></div>
+        <div class="stat">Score <div id="score" class="val">0</div></div>
+        <div class="stat">Apples <div id="apples" class="val">0</div></div>
+        <div class="stat">Level <div id="level" class="val">1</div></div>
+        <div class="stat">Rank <div id="rank" class="val">diddler</div></div>
       </div>
       <div class="controls">
         <button id="pauseBtn" class="btn secondary">Pause</button>
         <button id="restartBtn" class="btn">Restart</button>
       </div>
     </div>
-    <canvas id="game" width="560" height="560"></canvas>
-    <div style="margin-top:10px;width:100%;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px">
-      <div>Use Arrow keys or WASD • Space pause • R restart</div>
-      <div id="highscore" style="color:#cfead4;font-weight:700">High score: 0</div>
-    </div>
-  </div>
+    <canvas id="game"></canvas>
+    <div style="text-align:center;color:var(--muted);font-size:13px">Use Arrow keys / WASD • Space pause • R restart</div>
+  </main>
 
-  <aside class="shop">
+  <aside class="sidebar shop">
     <h3>Upgrade Shop</h3>
     <div class="desc">Buy permanent upgrades that persist across games. Spend apples collected during play to purchase upgrades.</div>
-
-    <div class="item">
-      <div class="icon">⚡</div>
-      <div class="info">
-        <div class="title">Speed Boost</div>
-        <div class="meta">Permanently increases base speed (+1). Cost: <strong>5</strong></div>
-      </div>
-      <div>
-        <button id="buySpeed" class="btn">Buy (5)</button>
-        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedSpeed">0</span></div>
-      </div>
-    </div>
-
-    <div class="item">
-      <div class="icon">🛡️</div>
-      <div class="info">
-        <div class="title">Extra Shield</div>
-        <div class="meta">Adds one shield (consumable). Shields prevent one self-collision.</div>
-      </div>
-      <div>
-        <button id="buyShield" class="btn">Buy (8)</button>
-        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedShields">0</span></div>
-      </div>
-    </div>
-
-    <div class="item">
-      <div class="icon">🌱</div>
-      <div class="info">
-        <div class="title">Extra Growth</div>
-        <div class="meta">Permanent +1 starting length. Cost: <strong>4</strong></div>
-      </div>
-      <div>
-        <button id="buyGrow" class="btn">Buy (4)</button>
-        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedGrow">0</span></div>
-      </div>
-    </div>
-
-    <div class="footer">Owned upgrades are saved locally in your browser. You can reset them using the button below.</div>
-    <div style="display:flex;gap:8px;margin-top:12px;">
-      <button id="resetUpgrades" class="btn secondary">Reset Upgrades</button>
-      <button id="exportUpgrades" class="btn secondary">Export</button>
-    </div>
+    <div class="item"><div class="icon">⚡</div><div class="info"><div class="title">Speed Boost</div><div class="meta">Permanently increases base speed (+1). Cost: <strong>5</strong></div></div><div><button id="buySpeed" class="btn">Buy (5)</button><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedSpeed">0</span></div></div></div>
+    <div class="item"><div class="icon">🛡️</div><div class="info"><div class="title">Extra Shield</div><div class="meta">Adds one shield (consumable). Shields prevent one self-collision. Cost: <strong>8</strong></div></div><div><button id="buyShield" class="btn">Buy (8)</button><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedShields">0</span></div></div></div>
+    <div class="item"><div class="icon">🌱</div><div class="info"><div class="title">Extra Growth</div><div class="meta">Permanent +1 starting length. Cost: <strong>4</strong></div></div><div><button id="buyGrow" class="btn">Buy (4)</button><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedGrow">0</span></div></div></div>
+    <div class="footer">Owned upgrades are saved locally in your browser. Reset clears local upgrades.</div>
+    <div style="display:flex;gap:8px;margin-top:12px;"><button id="resetUpgrades" class="btn secondary">Reset Upgrades</button><button id="exportUpgrades" class="btn secondary">Export</button></div>
     <div class="owned-list">Permanent XP: <span id="totalXp">0</span> • Persistent Rank: <strong id="persistentRank">diddler</strong></div>
   </aside>
 </div>
 
 <script>
-// ---- Game settings & visuals ----
+/* Settings */
+let CELL = 28; // larger cell => smaller map
+const TARGET_APPLE_COUNT = 5; // always keep 5 apples
+
+/* Canvas sizing */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const CELL = 20;
-const COLS = canvas.width / CELL;
-const ROWS = canvas.height / CELL;
+let COLS = 0, ROWS = 0;
 
-// ---- State ----
+/* State */
 let snake = [];
 let dir = {x:0,y:0};
-let apple = null;
+let apples = []; // array of apple positions
 let score = 0;
-let sessionApples = 0; // apples earned this game (currency to spend immediate purchases)
+let sessionApples = 0;
 let running = true;
-let baseSpeed = 8; // base frames per second
+let baseSpeed = 7;
 let speed = baseSpeed;
 let lastTick = 0;
 
-// persistent upgrades stored in localStorage
+/* Persistence */
 const STORAGE_KEY = 'snake_upgrades_v1';
 let upgrades = loadUpgrades();
-
 const RANKS = ['diddler','diddy','corban smells','67','apple muncher'];
-function calcLevel(totalXp){ return Math.floor(totalXp/10) + 1; } // slower leveling (10 XP per level)
-function calcRank(level){ if(level<=1) return RANKS[0]; if(level===2) return RANKS[1]; if(level===3) return RANKS[2]; if(level===4) return RANKS[3]; return RANKS[4]; }
+function calcLevel(totalXp){ return Math.floor(totalXp/10) + 1; }
+function calcRank(level){ if(level<=1)return RANKS[0]; if(level===2)return RANKS[1]; if(level===3)return RANKS[2]; if(level===4)return RANKS[3]; return RANKS[4]; }
 
-// ---- UI elements ----
+/* UI elements */
 const scoreEl = document.getElementById('score');
 const applesEl = document.getElementById('apples');
 const levelEl = document.getElementById('level');
 const rankEl = document.getElementById('rank');
-const highScoreEl = document.getElementById('highscore');
 const totalXpEl = document.getElementById('totalXp');
 const persistentRankEl = document.getElementById('persistentRank');
-
-// shop buttons
-const buySpeedBtn = document.getElementById('buySpeed');
-const buyShieldBtn = document.getElementById('buyShield');
-const buyGrowBtn = document.getElementById('buyGrow');
 const ownedSpeedEl = document.getElementById('ownedSpeed');
 const ownedShieldsEl = document.getElementById('ownedShields');
 const ownedGrowEl = document.getElementById('ownedGrow');
-
 const pauseBtn = document.getElementById('pauseBtn');
 const restartBtn = document.getElementById('restartBtn');
+const buySpeedBtn = document.getElementById('buySpeed');
+const buyShieldBtn = document.getElementById('buyShield');
+const buyGrowBtn = document.getElementById('buyGrow');
 const resetUpgradesBtn = document.getElementById('resetUpgrades');
 const exportUpgradesBtn = document.getElementById('exportUpgrades');
 
-// ---- Initialization ----
-function newGame(){
+/* Storage helpers */
+function loadUpgrades(){ try{ const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return {speedBoosts:0,shields:0,startGrow:0,totalXp:0,highScore:0}; return JSON.parse(raw); }catch(e){ return {speedBoosts:0,shields:0,startGrow:0,totalXp:0,highScore:0}; } }
+function saveUpgrades(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(upgrades)); }
+function resetUpgrades(){ upgrades = {speedBoosts:0,shields:0,startGrow:0,totalXp:0,highScore:0}; saveUpgrades(); newGame(); flash('Upgrades reset'); }
+function exportUpgrades(){ const data = JSON.stringify(upgrades,null,2); navigator.clipboard?.writeText(data).then(()=> flash('Upgrades JSON copied')); }
+
+/* Resize & layout - make canvas fill available stage area but use CELL-sized grid */
+function resizeCanvas(){
+  const stage = document.querySelector('.stage');
+  const hud = document.querySelector('.hud');
+  // available width is stage width minus some padding
+  const availW = stage.clientWidth - 40;
+  const availH = window.innerHeight - stage.getBoundingClientRect().top - hud.offsetHeight - 60;
+  COLS = Math.max(8, Math.floor(availW / CELL));
+  ROWS = Math.max(8, Math.floor(availH / CELL));
+  canvas.width = COLS * CELL;
+  canvas.height = ROWS * CELL;
+}
+
+window.addEventListener('resize', ()=>{ resizeCanvas(); // re-create apples/snake to fit — keep upgrades
+  // reposition but preserve progress by keeping score and sessionApples
+  // for simplicity restart current game to resize cleanly
+  newGame(true);
+});
+
+/* Game initialization */
+function newGame(keepSession=false){
+  resizeCanvas();
   snake = [];
   const startX = Math.floor(COLS/2);
   const startY = Math.floor(ROWS/2);
-  const startLen = 3 + (upgrades.startGrow || 0);
+  const startLen = 3 + (upgrades.startGrow||0);
   for(let i=0;i<startLen;i++) snake.push({x:startX-i, y:startY});
-  dir = {x:1, y:0};
-  apple = randomCell();
-  score = 0;
-  sessionApples = 0;
+  dir = {x:1,y:0};
+  if(!keepSession){ score = 0; sessionApples = 0; }
   running = true;
-  speed = baseSpeed + (upgrades.speedBoosts || 0);
+  speed = baseSpeed + (upgrades.speedBoosts||0);
+  // ensure apple array
+  apples = [];
+  refillApples();
   updateUI();
 }
 
-function randomCell(){
-  return {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)};
-}
-
-// ---- Storage ----
-function loadUpgrades(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return {speedBoosts:0, shields:0, startGrow:0, totalXp:0, highScore:0};
-    return JSON.parse(raw);
-  }catch(e){
-    return {speedBoosts:0, shields:0, startGrow:0, totalXp:0, highScore:0};
+/* Apples management: always keep TARGET_APPLE_COUNT apples on map */
+function refillApples(){
+  while(apples.length < TARGET_APPLE_COUNT){
+    const c = randomCell();
+    // avoid snake and existing apples
+    if(snake.some(s=>s.x===c.x && s.y===c.y)) continue;
+    if(apples.some(a=>a.x===c.x && a.y===c.y)) continue;
+    apples.push(c);
   }
 }
-function saveUpgrades(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(upgrades));
-}
 
-function resetUpgrades(){
-  upgrades = {speedBoosts:0, shields:0, startGrow:0, totalXp:0, highScore:0};
-  saveUpgrades();
-  newGame();
-  flashMessage('Upgrades reset');
-}
+function randomCell(){ return {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)}; }
 
-function exportUpgrades(){
-  const data = JSON.stringify(upgrades, null, 2);
-  navigator.clipboard?.writeText(data).then(()=> flashMessage('Upgrades JSON copied to clipboard'))
-}
+/* UI update */
+function updateUI(){ scoreEl.textContent = score; applesEl.textContent = sessionApples; const level = calcLevel((upgrades.totalXp||0) + score); levelEl.textContent = level; rankEl.textContent = calcRank(level); ownedSpeedEl.textContent = upgrades.speedBoosts||0; ownedShieldsEl.textContent = upgrades.shields||0; ownedGrowEl.textContent = upgrades.startGrow||0; totalXpEl.textContent = upgrades.totalXp||0; persistentRankEl.textContent = calcRank(calcLevel(upgrades.totalXp||0));
+  buySpeedBtn.disabled = sessionApples < 5; buyShieldBtn.disabled = sessionApples < 8; buyGrowBtn.disabled = sessionApples < 4; }
 
-// ---- UI updates ----
-function updateUI(){
-  scoreEl.textContent = score;
-  applesEl.textContent = sessionApples;
-  const level = calcLevel(upgrades.totalXp + score); // combine persistent XP and current score for live preview
-  levelEl.textContent = level;
-  rankEl.textContent = calcRank(level);
-  ownedSpeedEl.textContent = upgrades.speedBoosts || 0;
-  ownedShieldsEl.textContent = upgrades.shields || 0;
-  ownedGrowEl.textContent = upgrades.startGrow || 0;
-  totalXpEl.textContent = upgrades.totalXp;
-  persistentRankEl.textContent = calcRank(calcLevel(upgrades.totalXp));
-  highScoreEl.textContent = 'High score: ' + (upgrades.highScore||0);
-
-  // enable/disable buy buttons based on session apples
-  buySpeedBtn.disabled = sessionApples < 5;
-  buyShieldBtn.disabled = sessionApples < 8;
-  buyGrowBtn.disabled = sessionApples < 4;
-}
-
-// ---- Game logic ----
+/* Game tick */
 function tick(){
   const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
-  // wrap-around
-  if(head.x < 0) head.x = COLS - 1;
-  if(head.x >= COLS) head.x = 0;
-  if(head.y < 0) head.y = ROWS - 1;
-  if(head.y >= ROWS) head.y = 0;
-
-  // collision with self
-  if(snake.some(s => s.x===head.x && s.y===head.y)){
-    if(upgrades.shields > 0){
-      upgrades.shields -= 1;
-      saveUpgrades();
-      flashMessage('Shield used!');
-    } else {
-      // game over
-      running = false;
-      // persist XP and high score
-      upgrades.totalXp = (upgrades.totalXp || 0) + score;
-      if(score > (upgrades.highScore||0)) upgrades.highScore = score;
-      saveUpgrades();
+  if(head.x < 0) head.x = COLS - 1; if(head.x >= COLS) head.x = 0; if(head.y < 0) head.y = ROWS - 1; if(head.y >= ROWS) head.y = 0;
+  // self collision
+  if(snake.some(s=>s.x===head.x && s.y===head.y)){
+    if(upgrades.shields > 0){ upgrades.shields -= 1; saveUpgrades(); flash('Shield used'); }
+    else{ running = false; // persist xp & highscore
+      upgrades.totalXp = (upgrades.totalXp||0) + score; if(score > (upgrades.highScore||0)) upgrades.highScore = score; saveUpgrades(); updateUI(); return; }
+  }
+  // move
+  snake.unshift(head);
+  // check apple collection (multiple apples)
+  for(let i=0;i<apples.length;i++){
+    const a = apples[i];
+    if(a.x===head.x && a.y===head.y){
+      score += 1; sessionApples += 1;
+      // remove collected apple and spawn a new one
+      apples.splice(i,1);
+      refillApples();
       updateUI();
-      return;
+      return; // collected, skip pop
     }
   }
-
-  snake.unshift(head);
-  if(head.x === apple.x && head.y === apple.y){
-    score += 1;
-    sessionApples += 1;
-    apple = randomCell();
-    while(snake.some(s=>s.x===apple.x && s.y===apple.y)) apple = randomCell();
-  } else {
-    snake.pop();
-  }
-  updateUI();
+  snake.pop();
 }
 
+/* Draw */
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // background grid subtle
-  ctx.fillStyle = '#04141b';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  // apple
-  ctx.fillStyle = '#ff5b5b';
-  roundRect(ctx, apple.x * CELL + 4, apple.y * CELL + 4, CELL - 8, CELL - 8, 6);
-  ctx.fill();
-
+  // background
+  ctx.fillStyle = '#04141b'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  // apples
+  for(const a of apples){ ctx.fillStyle = '#ff5b5b'; roundRect(ctx, a.x*CELL + 6, a.y*CELL + 6, CELL - 12, CELL - 12, 6); ctx.fill(); }
   // snake
-  for(let i=snake.length-1;i>=0;i--){
-    const s = snake[i];
-    if(i===0){
-      // head with gradient
-      const grad = ctx.createLinearGradient(s.x*CELL, s.y*CELL, s.x*CELL+CELL, s.y*CELL+CELL);
-      grad.addColorStop(0, '#9fffb0');
-      grad.addColorStop(1, '#2bb86a');
-      ctx.fillStyle = grad;
-    } else {
-      ctx.fillStyle = '#2bb86a';
-    }
-    roundRect(ctx, s.x*CELL + 2, s.y*CELL + 2, CELL - 4, CELL - 4, 6);
-    ctx.fill();
-  }
-
-  if(!running){
-    ctx.fillStyle = 'rgba(3,6,10,0.6)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = '20px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Game Over — Press R to Restart', canvas.width/2, canvas.height/2 - 10);
-    ctx.fillStyle = '#cfead4';
-    ctx.fillText('Score: '+score+' • Apples collected: '+sessionApples, canvas.width/2, canvas.height/2 + 20);
-  }
+  for(let i=snake.length-1;i>=0;i--){ const s = snake[i]; if(i===0){ const grad = ctx.createLinearGradient(s.x*CELL, s.y*CELL, s.x*CELL+CELL, s.y*CELL+CELL); grad.addColorStop(0,'#9fffb0'); grad.addColorStop(1,'#2bb86a'); ctx.fillStyle = grad; } else ctx.fillStyle = '#2bb86a'; roundRect(ctx, s.x*CELL + 4, s.y*CELL + 4, CELL - 8, CELL - 8, 6); ctx.fill(); }
+  if(!running){ ctx.fillStyle='rgba(3,6,10,0.6)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fff'; ctx.font='20px Inter, sans-serif'; ctx.textAlign='center'; ctx.fillText('Game Over — Press R to Restart', canvas.width/2, canvas.height/2 - 10); ctx.fillStyle='#cfead4'; ctx.fillText('Score: '+score+' • Apples: '+sessionApples, canvas.width/2, canvas.height/2 + 20); }
 }
 
-function roundRect(ctx, x, y, w, h, r){
-  const min = Math.min(w,h)/2;
-  if(r>min) r=min;
-  ctx.beginPath();
-  ctx.moveTo(x+r, y);
-  ctx.arcTo(x+w, y, x+w, y+h, r);
-  ctx.arcTo(x+w, y+h, x, y+h, r);
-  ctx.arcTo(x, y+h, x, y, r);
-  ctx.arcTo(x, y, x+w, y, r);
-  ctx.closePath();
-}
+function roundRect(ctx,x,y,w,h,r){ const min=Math.min(w,h)/2; if(r>min) r=min; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
-// ---- Input ----
-window.addEventListener('keydown', (e) => {
-  if(['ArrowUp','w','W'].includes(e.key) && dir.y!==1) dir={x:0,y:-1};
-  if(['ArrowDown','s','S'].includes(e.key) && dir.y!==-1) dir={x:0,y:1};
-  if(['ArrowLeft','a','A'].includes(e.key) && dir.x!==1) dir={x:-1,y:0};
-  if(['ArrowRight','d','D'].includes(e.key) && dir.x!==-1) dir={x:1,y:0};
-  if(e.key === ' ') togglePause();
-  if(e.key === 'r' || e.key === 'R') { newGame(); }
-});
+/* Input */
+window.addEventListener('keydown',(e)=>{ if(['ArrowUp','w','W'].includes(e.key) && dir.y!==1) dir={x:0,y:-1}; if(['ArrowDown','s','S'].includes(e.key) && dir.y!==-1) dir={x:0,y:1}; if(['ArrowLeft','a','A'].includes(e.key) && dir.x!==1) dir={x:-1,y:0}; if(['ArrowRight','d','D'].includes(e.key) && dir.x!==-1) dir={x:1,y:0}; if(e.key===' ') togglePause(); if(e.key==='r'||e.key==='R'){ newGame(); } });
 
-pauseBtn.addEventListener('click', togglePause);
-restartBtn.addEventListener('click', ()=>{ newGame(); });
-resetUpgradesBtn.addEventListener('click', ()=>{ if(confirm('Reset all persistent upgrades?')) resetUpgrades(); });
-exportUpgradesBtn.addEventListener('click', exportUpgrades);
+pauseBtn.addEventListener('click', ()=>{ togglePause(); }); restartBtn.addEventListener('click', ()=>{ newGame(); }); resetUpgradesBtn.addEventListener('click', ()=>{ if(confirm('Reset all persistent upgrades?')) resetUpgrades(); }); exportUpgradesBtn.addEventListener('click', exportUpgrades);
 
-// ---- Shop interactions ----
-buySpeedBtn.addEventListener('click', ()=>{
-  const cost = 5;
-  if(sessionApples >= cost){
-    sessionApples -= cost;
-    upgrades.speedBoosts = (upgrades.speedBoosts||0) + 1;
-    upgrades.totalXp = (upgrades.totalXp||0) + Math.floor(cost/2); // some persistent XP reward
-    saveUpgrades();
-    speed = baseSpeed + (upgrades.speedBoosts||0);
-    flashMessage('Purchased permanent Speed +1');
-    updateUI();
-  }
-});
+/* Shop */
+buySpeedBtn.addEventListener('click', ()=>{ const cost=5; if(sessionApples>=cost){ sessionApples-=cost; upgrades.speedBoosts=(upgrades.speedBoosts||0)+1; upgrades.totalXp=(upgrades.totalXp||0)+Math.floor(cost/2); saveUpgrades(); speed = baseSpeed + (upgrades.speedBoosts||0); flash('Purchased Speed +1'); updateUI(); } });
+buyShieldBtn.addEventListener('click', ()=>{ const cost=8; if(sessionApples>=cost){ sessionApples-=cost; upgrades.shields=(upgrades.shields||0)+1; saveUpgrades(); flash('Purchased Shield'); updateUI(); } });
+buyGrowBtn.addEventListener('click', ()=>{ const cost=4; if(sessionApples>=cost){ sessionApples-=cost; upgrades.startGrow=(upgrades.startGrow||0)+1; upgrades.totalXp=(upgrades.totalXp||0)+1; saveUpgrades(); flash('Purchased Grow +1'); updateUI(); } });
 
-buyShieldBtn.addEventListener('click', ()=>{
-  const cost = 8;
-  if(sessionApples >= cost){
-    sessionApples -= cost;
-    upgrades.shields = (upgrades.shields||0) + 1;
-    saveUpgrades();
-    flashMessage('Purchased extra Shield');
-    updateUI();
-  }
-});
+function flash(text){ const old=document.title; document.title=text; setTimeout(()=>document.title=old,1200); }
 
-buyGrowBtn.addEventListener('click', ()=>{
-  const cost = 4;
-  if(sessionApples >= cost){
-    sessionApples -= cost;
-    upgrades.startGrow = (upgrades.startGrow||0) + 1;
-    upgrades.totalXp = (upgrades.totalXp||0) + 1;
-    saveUpgrades();
-    flashMessage('Purchased permanent Grow +1');
-    updateUI();
-  }
-});
+/* Main loop */
+function loop(ts){ if(!lastTick) lastTick = ts; const interval = 1000 / speed; if(ts - lastTick > interval){ if(running) tick(); draw(); lastTick = ts; } requestAnimationFrame(loop); }
 
-function flashMessage(text){
-  // tiny ephemeral UI using title change
-  const old = document.title;
-  document.title = text;
-  setTimeout(()=>document.title = old, 1500);
-}
-
-// ---- Main loop ----
-function loop(timestamp){
-  if(!lastTick) lastTick = timestamp;
-  const interval = 1000 / (speed);
-  if(timestamp - lastTick > interval){
-    if(running) tick();
-    draw();
-    lastTick = timestamp;
-  }
-  requestAnimationFrame(loop);
-}
-
-function togglePause(){ running = !running; pauseBtn.textContent = running? 'Pause' : 'Resume'; }
-
-// start
-newGame();
-updateUI();
-requestAnimationFrame(loop);
-
+/* Start */
+resizeCanvas(); newGame(); updateUI(); requestAnimationFrame(loop);
 </script>
 </body>
 </html>
