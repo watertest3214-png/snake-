@@ -167,7 +167,7 @@ function refillApples(){
 function randomCell(){ return {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)}; }
 
 /* UI update */
-function updateUI(){ scoreEl.textContent = score; applesEl.textContent = sessionApples; const level = calcLevel((upgrades.totalXp||0) + score); levelEl.textContent = level; rankEl.textContent = calcRank(level); ownedSpeedEl.textContent = upgrades.speedBoosts||0; ownedShieldsEl.textContent = upgrades.shields||0; ownedGrowEl.textContent = upgrades.startGrow||0; totalXpEl.textContent = upgrades.totalXp||0; persistentRankEl.textContent = calcRank(calcLevel(upgrades.totalXp||0));
+function updateUI(){ scoreEl.textContent = score; applesEl.textContent = sessionApples; const level = calcLevel(score); levelEl.textContent = level; rankEl.textContent = calcRank(level); ownedSpeedEl.textContent = upgrades.speedBoosts||0; ownedShieldsEl.textContent = upgrades.shields||0; ownedGrowEl.textContent = upgrades.startGrow||0; totalXpEl.textContent = upgrades.totalXp||0; persistentRankEl.textContent = calcRank(calcLevel(upgrades.totalXp||0));
   buySpeedBtn.disabled = sessionApples < 5; buyShieldBtn.disabled = sessionApples < 8; buyGrowBtn.disabled = sessionApples < 4; }
 
 /* Game tick */
@@ -219,7 +219,7 @@ pauseBtn.addEventListener('click', ()=>{ togglePause(); }); restartBtn.addEventL
 /* Shop */
 buySpeedBtn.addEventListener('click', ()=>{ const cost=5; if(sessionApples>=cost){ sessionApples-=cost; upgrades.speedBoosts=(upgrades.speedBoosts||0)+1; upgrades.totalXp=(upgrades.totalXp||0)+Math.floor(cost/2); saveUpgrades(); speed = baseSpeed + (upgrades.speedBoosts||0); flash('Purchased Speed +1'); updateUI(); } });
 buyShieldBtn.addEventListener('click', ()=>{ const cost=8; if(sessionApples>=cost){ sessionApples-=cost; upgrades.shields=(upgrades.shields||0)+1; saveUpgrades(); flash('Purchased Shield'); updateUI(); } });
-buyGrowBtn.addEventListener('click', ()=>{ const cost=4; if(sessionApples>=cost){ sessionApples-=cost; upgrades.startGrow=(upgrades.startGrow||0)+1; upgrades.totalXp=(upgrades.totalXp||0)+1; saveUpgrades(); flash('Purchased Grow +1'); updateUI(); } });
+buyGrowBtn.addEventListener('click', ()=>{ const cost=4; if(sessionApples>=cost){ sessionApples-=cost; upgrades.startGrow=(upgrades.startGrow||0)+1; upgrades.totalXp=(upgrades.totalXp||0) + 1; saveUpgrades(); flash('Purchased Grow +1'); updateUI(); } });
 
 function flash(text){ const old=document.title; document.title=text; setTimeout(()=>document.title=old,1200); }
 
