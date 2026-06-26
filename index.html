@@ -2,16 +2,27 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Simple Snake - Eat Game</title>
+<title>Simple Snake - Eat Game (With Power-ups & Ranks)</title>
 <style>
   body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#111;color:#fff;font-family:sans-serif}
   #game{background:#000;border:4px solid #333}
   .info{position:fixed;top:10px;left:10px}
+  .shop{position:fixed;top:10px;right:10px;background:rgba(255,255,255,0.04);padding:10px;border:1px solid #333;border-radius:6px}
+  .shop button{display:block;margin:6px 0;padding:6px 8px;background:#222;color:#fff;border:1px solid #444;border-radius:4px}
+  .shop button:disabled{opacity:0.4}
+  .status{margin-bottom:6px}
 </style>
 </head>
 <body>
 <canvas id="game" width="400" height="400"></canvas>
-<div class="info">Score: <span id="score">0</span> &nbsp; Controls: Arrow keys or WASD. Press Space to pause, R to restart</div>
+<div class="info">Score: <span id="score">0</span> &nbsp; Apples: <span id="apples">0</span> &nbsp; Level: <span id="level">1</span> &nbsp; Rank: <span id="rank">diddler</span></div>
+<div class="shop">
+  <div class="status">Shop - Buy with apples</div>
+  <button id="buySpeed">Speed +1 (Cost: 3)</button>
+  <button id="buyShield">Shield (1 use) (Cost: 5)</button>
+  <button id="buyGrow">Grow +2 (Cost: 2)</button>
+  <div style="font-size:12px;color:#bbb;margin-top:6px">Owned: <span id="owned">none</span></div>
+</div>
 <script>
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
@@ -21,10 +32,39 @@ const rows=canvas.height/grid;
 let snake=[{x:10,y:10}];
 let dir={x:0,y:0};
 let apple=randomCell();
-let score=0;
+let score=0; // visible score
+let apples=0; // currency (apples collected)
+let xp=0; // experience for levels
 let running=true;
-let speed=7; // frames per second
+let speed=7; // frames per second (modifiable by power-up)
 let lastTick=0;
+let shield=false;
+let owned=[];
+
+const RANKS=["diddler","diddy","corban smells","67","apple muncher"];
+function getLevel(){
+  return Math.floor(xp/5)+1; // every 5 apples = +1 level
+}
+function getRank(level){
+  if(level<=1) return RANKS[0];
+  if(level===2) return RANKS[1];
+  if(level===3) return RANKS[2];
+  if(level===4) return RANKS[3];
+  return RANKS[4];
+}
+
+function updateUI(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('apples').textContent=apples;
+  const level=getLevel();
+  document.getElementById('level').textContent=level;
+  document.getElementById('rank').textContent=getRank(level);
+  document.getElementById('owned').textContent = (owned.length? owned.join(', '): 'none') + (shield? ' | shield':'');
+  // disable buttons if not enough apples
+  document.getElementById('buySpeed').disabled = apples < 3;
+  document.getElementById('buyShield').disabled = apples < 5;
+  document.getElementById('buyGrow').disabled = apples < 2;
+}
 
 function randomCell(){
   return {x:Math.floor(Math.random()*cols), y:Math.floor(Math.random()*rows)};
@@ -50,12 +90,20 @@ function update(){
   if(head.y>=rows) head.y=0;
   // collision with self
   if(snake.some(s=>s.x===head.x && s.y===head.y)){
-    running=false;
-    return;
+    if(shield){
+      // consume shield and continue; remove tail to survive
+      shield=false;
+      owned = owned.filter(x=>x!=='shield');
+    } else {
+      running=false;
+      return;
+    }
   }
   snake.unshift(head);
   if(head.x===apple.x && head.y===apple.y){
     score++;
+    apples++; // currency
+    xp++;
     document.getElementById('score').textContent=score;
     apple=randomCell();
     // ensure apple not on snake
@@ -63,6 +111,7 @@ function update(){
   } else {
     snake.pop();
   }
+  updateUI();
 }
 
 function draw(){
@@ -102,10 +151,50 @@ function restart(){
   dir={x:0,y:0};
   apple=randomCell();
   score=0;
-  document.getElementById('score').textContent=score;
+  apples=0;
+  xp=0;
   running=true;
+  speed=7;
+  shield=false;
+  owned=[];
+  updateUI();
 }
 
+// Shop actions
+document.getElementById('buySpeed').addEventListener('click', ()=>{
+  const cost=3;
+  if(apples>=cost){
+    apples-=cost;
+    speed = Math.max(3, speed+1); // increase speed
+    owned.push('speed+');
+    updateUI();
+  }
+});
+
+document.getElementById('buyShield').addEventListener('click', ()=>{
+  const cost=5;
+  if(apples>=cost){
+    apples-=cost;
+    shield=true;
+    owned.push('shield');
+    updateUI();
+  }
+});
+
+document.getElementById('buyGrow').addEventListener('click', ()=>{
+  const cost=2;
+  if(apples>=cost){
+    apples-=cost;
+    // grow by duplicating tail two times
+    const tail = snake[snake.length-1];
+    snake.push({x:tail.x,y:tail.y});
+    snake.push({x:tail.x,y:tail.y});
+    owned.push('grow+2');
+    updateUI();
+  }
+});
+
+updateUI();
 requestAnimationFrame(loop);
 </script>
 </body>
