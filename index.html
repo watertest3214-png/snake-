@@ -1,113 +1,262 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Simple Snake - Eat Game (With Power-ups & Ranks)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Polished Snake — Eat & Upgrade</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 <style>
-  body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#111;color:#fff;font-family:sans-serif}
-  #game{background:#000;border:4px solid #333}
-  .info{position:fixed;top:10px;left:10px}
-  .shop{position:fixed;top:10px;right:10px;background:rgba(255,255,255,0.04);padding:10px;border:1px solid #333;border-radius:6px}
-  .shop button{display:block;margin:6px 0;padding:6px 8px;background:#222;color:#fff;border:1px solid #444;border-radius:4px}
-  .shop button:disabled{opacity:0.4}
-  .status{margin-bottom:6px}
+  :root{
+    --bg:#0f1720; --panel:#0b1220; --accent:#56d364; --muted:#9aa4b2; --glass: rgba(255,255,255,0.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#071021 0%, #0b1724 100%);color:#e6eef6}
+  .app{width:960px;max-width:96vw;display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+  .stage{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 6px 30px rgba(2,6,23,0.6);display:flex;flex-direction:column;align-items:center}
+  canvas{background:linear-gradient(180deg,#031018 0%, #061426 100%);border-radius:8px;border:2px solid rgba(255,255,255,0.03);box-shadow:inset 0 2px 10px rgba(0,0,0,0.6);}
+  .hud{width:100%;display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .stats{display:flex;gap:12px;align-items:center}
+  .stat{background:var(--glass);padding:8px 12px;border-radius:10px;font-weight:600;color:var(--muted);display:inline-flex;flex-direction:column;min-width:90px}
+  .stat .val{color:var(--accent);font-size:18px}
+  .controls{display:flex;gap:8px}
+  .btn{background:#071727;border:1px solid rgba(255,255,255,0.03);color:#dff7e3;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:600}
+
+  /* shop panel */
+  .shop{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.5)}
+  .shop h3{margin:0 0 8px 0;font-size:16px;color:#cfead4}
+  .shop .desc{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.01), transparent);margin-bottom:10px}
+  .item .icon{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:18px}
+  .item .info{flex:1}
+  .item .title{font-weight:700;color:#dff7e3}
+  .item .meta{font-size:13px;color:var(--muted)}
+  .item button{min-width:110px}
+  .footer{margin-top:12px;font-size:13px;color:var(--muted)}
+
+  .owned-list{font-size:13px;color:#c2f2cf;margin-top:8px}
+  @media(max-width:880px){.app{grid-template-columns:1fr;padding:16px} .shop{order:2}}
 </style>
 </head>
 <body>
-<canvas id="game" width="400" height="400"></canvas>
-<div class="info">Score: <span id="score">0</span> &nbsp; Apples: <span id="apples">0</span> &nbsp; Level: <span id="level">1</span> &nbsp; Rank: <span id="rank">diddler</span></div>
-<div class="shop">
-  <div class="status">Shop - Buy with apples</div>
-  <button id="buySpeed">Speed +1 (Cost: 3)</button>
-  <button id="buyShield">Shield (1 use) (Cost: 5)</button>
-  <button id="buyGrow">Grow +2 (Cost: 2)</button>
-  <div style="font-size:12px;color:#bbb;margin-top:6px">Owned: <span id="owned">none</span></div>
+<div class="app">
+  <div class="stage">
+    <div class="hud">
+      <div class="stats">
+        <div class="stat">Score <span id="score" class="val">0</span></div>
+        <div class="stat">Apples <span id="apples" class="val">0</span></div>
+        <div class="stat">Level <span id="level" class="val">1</span></div>
+        <div class="stat">Rank <span id="rank" class="val">diddler</span></div>
+      </div>
+      <div class="controls">
+        <button id="pauseBtn" class="btn secondary">Pause</button>
+        <button id="restartBtn" class="btn">Restart</button>
+      </div>
+    </div>
+    <canvas id="game" width="560" height="560"></canvas>
+    <div style="margin-top:10px;width:100%;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px">
+      <div>Use Arrow keys or WASD • Space pause • R restart</div>
+      <div id="highscore" style="color:#cfead4;font-weight:700">High score: 0</div>
+    </div>
+  </div>
+
+  <aside class="shop">
+    <h3>Upgrade Shop</h3>
+    <div class="desc">Buy permanent upgrades that persist across games. Spend apples collected during play to purchase upgrades.</div>
+
+    <div class="item">
+      <div class="icon">⚡</div>
+      <div class="info">
+        <div class="title">Speed Boost</div>
+        <div class="meta">Permanently increases base speed (+1). Cost: <strong>5</strong></div>
+      </div>
+      <div>
+        <button id="buySpeed" class="btn">Buy (5)</button>
+        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedSpeed">0</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="icon">🛡️</div>
+      <div class="info">
+        <div class="title">Extra Shield</div>
+        <div class="meta">Adds one shield (consumable). Shields prevent one self-collision.</div>
+      </div>
+      <div>
+        <button id="buyShield" class="btn">Buy (8)</button>
+        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedShields">0</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="icon">🌱</div>
+      <div class="info">
+        <div class="title">Extra Growth</div>
+        <div class="meta">Permanent +1 starting length. Cost: <strong>4</strong></div>
+      </div>
+      <div>
+        <button id="buyGrow" class="btn">Buy (4)</button>
+        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Owned: <span id="ownedGrow">0</span></div>
+      </div>
+    </div>
+
+    <div class="footer">Owned upgrades are saved locally in your browser. You can reset them using the button below.</div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button id="resetUpgrades" class="btn secondary">Reset Upgrades</button>
+      <button id="exportUpgrades" class="btn secondary">Export</button>
+    </div>
+    <div class="owned-list">Permanent XP: <span id="totalXp">0</span> • Persistent Rank: <strong id="persistentRank">diddler</strong></div>
+  </aside>
 </div>
+
 <script>
-const canvas=document.getElementById('game');
-const ctx=canvas.getContext('2d');
-const grid=20; // size of cells
-const cols=canvas.width/grid;
-const rows=canvas.height/grid;
-let snake=[{x:10,y:10}];
-let dir={x:0,y:0};
-let apple=randomCell();
-let score=0; // visible score
-let apples=0; // currency (apples collected)
-let xp=0; // experience for levels
-let running=true;
-let speed=7; // frames per second (modifiable by power-up)
-let lastTick=0;
-let shield=false;
-let owned=[];
+// ---- Game settings & visuals ----
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const CELL = 20;
+const COLS = canvas.width / CELL;
+const ROWS = canvas.height / CELL;
 
-const RANKS=["diddler","diddy","corban smells","67","apple muncher"];
-function getLevel(){
-  return Math.floor(xp/5)+1; // every 5 apples = +1 level
-}
-function getRank(level){
-  if(level<=1) return RANKS[0];
-  if(level===2) return RANKS[1];
-  if(level===3) return RANKS[2];
-  if(level===4) return RANKS[3];
-  return RANKS[4];
-}
+// ---- State ----
+let snake = [];
+let dir = {x:0,y:0};
+let apple = null;
+let score = 0;
+let sessionApples = 0; // apples earned this game (currency to spend immediate purchases)
+let running = true;
+let baseSpeed = 8; // base frames per second
+let speed = baseSpeed;
+let lastTick = 0;
 
-function updateUI(){
-  document.getElementById('score').textContent=score;
-  document.getElementById('apples').textContent=apples;
-  const level=getLevel();
-  document.getElementById('level').textContent=level;
-  document.getElementById('rank').textContent=getRank(level);
-  document.getElementById('owned').textContent = (owned.length? owned.join(', '): 'none') + (shield? ' | shield':'');
-  // disable buttons if not enough apples
-  document.getElementById('buySpeed').disabled = apples < 3;
-  document.getElementById('buyShield').disabled = apples < 5;
-  document.getElementById('buyGrow').disabled = apples < 2;
+// persistent upgrades stored in localStorage
+const STORAGE_KEY = 'snake_upgrades_v1';
+let upgrades = loadUpgrades();
+
+const RANKS = ['diddler','diddy','corban smells','67','apple muncher'];
+function calcLevel(totalXp){ return Math.floor(totalXp/10) + 1; } // slower leveling (10 XP per level)
+function calcRank(level){ if(level<=1) return RANKS[0]; if(level===2) return RANKS[1]; if(level===3) return RANKS[2]; if(level===4) return RANKS[3]; return RANKS[4]; }
+
+// ---- UI elements ----
+const scoreEl = document.getElementById('score');
+const applesEl = document.getElementById('apples');
+const levelEl = document.getElementById('level');
+const rankEl = document.getElementById('rank');
+const highScoreEl = document.getElementById('highscore');
+const totalXpEl = document.getElementById('totalXp');
+const persistentRankEl = document.getElementById('persistentRank');
+
+// shop buttons
+const buySpeedBtn = document.getElementById('buySpeed');
+const buyShieldBtn = document.getElementById('buyShield');
+const buyGrowBtn = document.getElementById('buyGrow');
+const ownedSpeedEl = document.getElementById('ownedSpeed');
+const ownedShieldsEl = document.getElementById('ownedShields');
+const ownedGrowEl = document.getElementById('ownedGrow');
+
+const pauseBtn = document.getElementById('pauseBtn');
+const restartBtn = document.getElementById('restartBtn');
+const resetUpgradesBtn = document.getElementById('resetUpgrades');
+const exportUpgradesBtn = document.getElementById('exportUpgrades');
+
+// ---- Initialization ----
+function newGame(){
+  snake = [];
+  const startX = Math.floor(COLS/2);
+  const startY = Math.floor(ROWS/2);
+  const startLen = 3 + (upgrades.startGrow || 0);
+  for(let i=0;i<startLen;i++) snake.push({x:startX-i, y:startY});
+  dir = {x:1, y:0};
+  apple = randomCell();
+  score = 0;
+  sessionApples = 0;
+  running = true;
+  speed = baseSpeed + (upgrades.speedBoosts || 0);
+  updateUI();
 }
 
 function randomCell(){
-  return {x:Math.floor(Math.random()*cols), y:Math.floor(Math.random()*rows)};
+  return {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)};
 }
 
-function loop(timestamp){
-  if(!lastTick) lastTick=timestamp;
-  const interval=1000/speed;
-  if(timestamp-lastTick > interval){
-    if(running) update();
-    draw();
-    lastTick=timestamp;
+// ---- Storage ----
+function loadUpgrades(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return {speedBoosts:0, shields:0, startGrow:0, totalXp:0, highScore:0};
+    return JSON.parse(raw);
+  }catch(e){
+    return {speedBoosts:0, shields:0, startGrow:0, totalXp:0, highScore:0};
   }
-  requestAnimationFrame(loop);
+}
+function saveUpgrades(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(upgrades));
 }
 
-function update(){
-  const head={x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+function resetUpgrades(){
+  upgrades = {speedBoosts:0, shields:0, startGrow:0, totalXp:0, highScore:0};
+  saveUpgrades();
+  newGame();
+  flashMessage('Upgrades reset');
+}
+
+function exportUpgrades(){
+  const data = JSON.stringify(upgrades, null, 2);
+  navigator.clipboard?.writeText(data).then(()=> flashMessage('Upgrades JSON copied to clipboard'))
+}
+
+// ---- UI updates ----
+function updateUI(){
+  scoreEl.textContent = score;
+  applesEl.textContent = sessionApples;
+  const level = calcLevel(upgrades.totalXp + score); // combine persistent XP and current score for live preview
+  levelEl.textContent = level;
+  rankEl.textContent = calcRank(level);
+  ownedSpeedEl.textContent = upgrades.speedBoosts || 0;
+  ownedShieldsEl.textContent = upgrades.shields || 0;
+  ownedGrowEl.textContent = upgrades.startGrow || 0;
+  totalXpEl.textContent = upgrades.totalXp;
+  persistentRankEl.textContent = calcRank(calcLevel(upgrades.totalXp));
+  highScoreEl.textContent = 'High score: ' + (upgrades.highScore||0);
+
+  // enable/disable buy buttons based on session apples
+  buySpeedBtn.disabled = sessionApples < 5;
+  buyShieldBtn.disabled = sessionApples < 8;
+  buyGrowBtn.disabled = sessionApples < 4;
+}
+
+// ---- Game logic ----
+function tick(){
+  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
   // wrap-around
-  if(head.x<0) head.x=cols-1;
-  if(head.x>=cols) head.x=0;
-  if(head.y<0) head.y=rows-1;
-  if(head.y>=rows) head.y=0;
+  if(head.x < 0) head.x = COLS - 1;
+  if(head.x >= COLS) head.x = 0;
+  if(head.y < 0) head.y = ROWS - 1;
+  if(head.y >= ROWS) head.y = 0;
+
   // collision with self
-  if(snake.some(s=>s.x===head.x && s.y===head.y)){
-    if(shield){
-      // consume shield and continue; remove tail to survive
-      shield=false;
-      owned = owned.filter(x=>x!=='shield');
+  if(snake.some(s => s.x===head.x && s.y===head.y)){
+    if(upgrades.shields > 0){
+      upgrades.shields -= 1;
+      saveUpgrades();
+      flashMessage('Shield used!');
     } else {
-      running=false;
+      // game over
+      running = false;
+      // persist XP and high score
+      upgrades.totalXp = (upgrades.totalXp || 0) + score;
+      if(score > (upgrades.highScore||0)) upgrades.highScore = score;
+      saveUpgrades();
+      updateUI();
       return;
     }
   }
+
   snake.unshift(head);
-  if(head.x===apple.x && head.y===apple.y){
-    score++;
-    apples++; // currency
-    xp++;
-    document.getElementById('score').textContent=score;
-    apple=randomCell();
-    // ensure apple not on snake
-    while(snake.some(s=>s.x===apple.x && s.y===apple.y)) apple=randomCell();
+  if(head.x === apple.x && head.y === apple.y){
+    score += 1;
+    sessionApples += 1;
+    apple = randomCell();
+    while(snake.some(s=>s.x===apple.x && s.y===apple.y)) apple = randomCell();
   } else {
     snake.pop();
   }
@@ -115,87 +264,135 @@ function update(){
 }
 
 function draw(){
-  ctx.fillStyle='#000';
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // background grid subtle
+  ctx.fillStyle = '#04141b';
   ctx.fillRect(0,0,canvas.width,canvas.height);
-  // draw apple
-  ctx.fillStyle='red';
-  ctx.fillRect(apple.x*grid, apple.y*grid, grid, grid);
-  // draw snake
-  ctx.fillStyle='lime';
-  for(let i=0;i<snake.length;i++){
-    const s=snake[i];
-    ctx.fillRect(s.x*grid, s.y*grid, grid-1, grid-1);
+
+  // apple
+  ctx.fillStyle = '#ff5b5b';
+  roundRect(ctx, apple.x * CELL + 4, apple.y * CELL + 4, CELL - 8, CELL - 8, 6);
+  ctx.fill();
+
+  // snake
+  for(let i=snake.length-1;i>=0;i--){
+    const s = snake[i];
+    if(i===0){
+      // head with gradient
+      const grad = ctx.createLinearGradient(s.x*CELL, s.y*CELL, s.x*CELL+CELL, s.y*CELL+CELL);
+      grad.addColorStop(0, '#9fffb0');
+      grad.addColorStop(1, '#2bb86a');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = '#2bb86a';
+    }
+    roundRect(ctx, s.x*CELL + 2, s.y*CELL + 2, CELL - 4, CELL - 4, 6);
+    ctx.fill();
   }
+
   if(!running){
-    ctx.fillStyle='rgba(0,0,0,0.5)';
+    ctx.fillStyle = 'rgba(3,6,10,0.6)';
     ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='white';
-    ctx.font='20px sans-serif';
-    ctx.textAlign='center';
-    ctx.fillText('Game Over - Press R to Restart', canvas.width/2, canvas.height/2);
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Game Over — Press R to Restart', canvas.width/2, canvas.height/2 - 10);
+    ctx.fillStyle = '#cfead4';
+    ctx.fillText('Score: '+score+' • Apples collected: '+sessionApples, canvas.width/2, canvas.height/2 + 20);
   }
 }
 
-window.addEventListener('keydown',e=>{
-  const key=e.key;
-  if(key==='ArrowUp' || key==='w' || key==='W'){ if(dir.y!==1){dir={x:0,y:-1}}}
-  if(key==='ArrowDown' || key==='s' || key==='S'){ if(dir.y!==-1){dir={x:0,y:1}}}
-  if(key==='ArrowLeft' || key==='a' || key==='A'){ if(dir.x!==1){dir={x:-1,y:0}}}
-  if(key==='ArrowRight' || key==='d' || key==='D'){ if(dir.x!==-1){dir={x:1,y:0}}}
-  if(key===' '){ running=!running } // space pause
-  if(key==='r' || key==='R'){ restart(); }
-});
-
-function restart(){
-  snake=[{x:10,y:10}];
-  dir={x:0,y:0};
-  apple=randomCell();
-  score=0;
-  apples=0;
-  xp=0;
-  running=true;
-  speed=7;
-  shield=false;
-  owned=[];
-  updateUI();
+function roundRect(ctx, x, y, w, h, r){
+  const min = Math.min(w,h)/2;
+  if(r>min) r=min;
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
 }
 
-// Shop actions
-document.getElementById('buySpeed').addEventListener('click', ()=>{
-  const cost=3;
-  if(apples>=cost){
-    apples-=cost;
-    speed = Math.max(3, speed+1); // increase speed
-    owned.push('speed+');
+// ---- Input ----
+window.addEventListener('keydown', (e) => {
+  if(['ArrowUp','w','W'].includes(e.key) && dir.y!==1) dir={x:0,y:-1};
+  if(['ArrowDown','s','S'].includes(e.key) && dir.y!==-1) dir={x:0,y:1};
+  if(['ArrowLeft','a','A'].includes(e.key) && dir.x!==1) dir={x:-1,y:0};
+  if(['ArrowRight','d','D'].includes(e.key) && dir.x!==-1) dir={x:1,y:0};
+  if(e.key === ' ') togglePause();
+  if(e.key === 'r' || e.key === 'R') { newGame(); }
+});
+
+pauseBtn.addEventListener('click', togglePause);
+restartBtn.addEventListener('click', ()=>{ newGame(); });
+resetUpgradesBtn.addEventListener('click', ()=>{ if(confirm('Reset all persistent upgrades?')) resetUpgrades(); });
+exportUpgradesBtn.addEventListener('click', exportUpgrades);
+
+// ---- Shop interactions ----
+buySpeedBtn.addEventListener('click', ()=>{
+  const cost = 5;
+  if(sessionApples >= cost){
+    sessionApples -= cost;
+    upgrades.speedBoosts = (upgrades.speedBoosts||0) + 1;
+    upgrades.totalXp = (upgrades.totalXp||0) + Math.floor(cost/2); // some persistent XP reward
+    saveUpgrades();
+    speed = baseSpeed + (upgrades.speedBoosts||0);
+    flashMessage('Purchased permanent Speed +1');
     updateUI();
   }
 });
 
-document.getElementById('buyShield').addEventListener('click', ()=>{
-  const cost=5;
-  if(apples>=cost){
-    apples-=cost;
-    shield=true;
-    owned.push('shield');
+buyShieldBtn.addEventListener('click', ()=>{
+  const cost = 8;
+  if(sessionApples >= cost){
+    sessionApples -= cost;
+    upgrades.shields = (upgrades.shields||0) + 1;
+    saveUpgrades();
+    flashMessage('Purchased extra Shield');
     updateUI();
   }
 });
 
-document.getElementById('buyGrow').addEventListener('click', ()=>{
-  const cost=2;
-  if(apples>=cost){
-    apples-=cost;
-    // grow by duplicating tail two times
-    const tail = snake[snake.length-1];
-    snake.push({x:tail.x,y:tail.y});
-    snake.push({x:tail.x,y:tail.y});
-    owned.push('grow+2');
+buyGrowBtn.addEventListener('click', ()=>{
+  const cost = 4;
+  if(sessionApples >= cost){
+    sessionApples -= cost;
+    upgrades.startGrow = (upgrades.startGrow||0) + 1;
+    upgrades.totalXp = (upgrades.totalXp||0) + 1;
+    saveUpgrades();
+    flashMessage('Purchased permanent Grow +1');
     updateUI();
   }
 });
 
+function flashMessage(text){
+  // tiny ephemeral UI using title change
+  const old = document.title;
+  document.title = text;
+  setTimeout(()=>document.title = old, 1500);
+}
+
+// ---- Main loop ----
+function loop(timestamp){
+  if(!lastTick) lastTick = timestamp;
+  const interval = 1000 / (speed);
+  if(timestamp - lastTick > interval){
+    if(running) tick();
+    draw();
+    lastTick = timestamp;
+  }
+  requestAnimationFrame(loop);
+}
+
+function togglePause(){ running = !running; pauseBtn.textContent = running? 'Pause' : 'Resume'; }
+
+// start
+newGame();
 updateUI();
 requestAnimationFrame(loop);
+
 </script>
 </body>
 </html>
